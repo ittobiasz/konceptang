@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   groq: {
     baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: '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',
+    apiKey: '', // Pridaj svoj Groq API kluc z console.groq.com
     model: 'llama-3.3-70b-versatile'
   },
   openAi: {
