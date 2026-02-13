@@ -1,0 +1,236 @@
+<div class="ai-advisor-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>
+        <span class="ai-icon">🤖</span>
+        AI Poradca
+      </h1>
+      <p class="subtitle">Personalizovaná analýza a investičné odporúčania</p>
+    </div>
+    <a routerLink="/portfolio" class="btn btn-secondary">
+      <span>←</span> Portfólio
+    </a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'analysis'"
+      (click)="setActiveTab('analysis')">
+      <span>📊</span> Analýza portfólia
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'chat'"
+      (click)="setActiveTab('chat')">
+      <span>💬</span> Chat s AI
+    </button>
+  </div>
+
+  @if (activeTab() === 'analysis') {
+    <!-- Analysis Tab -->
+    <div class="analysis-section">
+      <div class="analysis-header">
+        <div class="header-info">
+          <h2>Analýza vášho portfólia</h2>
+          <p>AI zhodnotí riziko, diverzifikáciu a poskytne odporúčania</p>
+        </div>
+        <button 
+          class="btn btn-primary"
+          [disabled]="isAnalyzing()"
+          (click)="analyzePortfolio()">
+          @if (isAnalyzing()) {
+            <span class="spinner-small"></span>
+            Analyzujem...
+          } @else {
+            <span>✨</span> Analyzovať
+          }
+        </button>
+      </div>
+
+      @if (insight()) {
+        <div class="insight-grid">
+          <!-- Summary Card -->
+          <div class="insight-card summary">
+            <div class="card-header">
+              <h3>Zhrnutie</h3>
+              <span class="timestamp">{{ formatTime(insight()!.timestamp) }}</span>
+            </div>
+            <p class="summary-text">{{ insight()!.summary }}</p>
+          </div>
+
+          <!-- Scores -->
+          <div class="scores-row">
+            <div class="score-card">
+              <div class="score-header">
+                <span class="score-icon">⚠️</span>
+                <span class="score-label">Riziko</span>
+              </div>
+              <div class="score-value">
+                <div 
+                  class="score-circle"
+                  [style.--score-color]="getRiskColor(insight()!.riskScore)">
+                  <span>{{ insight()!.riskScore }}/10</span>
+                </div>
+                <span 
+                  class="score-text"
+                  [style.color]="getRiskColor(insight()!.riskScore)">
+                  {{ getRiskLabel(insight()!.riskScore) }}
+                </span>
+              </div>
+              <div class="score-bar">
+                <div 
+                  class="score-fill"
+                  [style.width.%]="insight()!.riskScore * 10"
+                  [style.background]="getRiskColor(insight()!.riskScore)">
+                </div>
+              </div>
+            </div>
+
+            <div class="score-card">
+              <div class="score-header">
+                <span class="score-icon">🎯</span>
+                <span class="score-label">Diverzifikácia</span>
+              </div>
+              <div class="score-value">
+                <div 
+                  class="score-circle"
+                  [style.--score-color]="getDiversificationColor(insight()!.diversificationScore)">
+                  <span>{{ insight()!.diversificationScore }}/10</span>
+                </div>
+                <span 
+                  class="score-text"
+                  [style.color]="getDiversificationColor(insight()!.diversificationScore)">
+                  {{ getDiversificationLabel(insight()!.diversificationScore) }}
+                </span>
+              </div>
+              <div class="score-bar">
+                <div 
+                  class="score-fill"
+                  [style.width.%]="insight()!.diversificationScore * 10"
+                  [style.background]="getDiversificationColor(insight()!.diversificationScore)">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="insight-card recommendations">
+            <div class="card-header">
+              <h3>💡 Odporúčania</h3>
+            </div>
+            <ul class="recommendations-list">
+              @for (rec of insight()!.recommendations; track rec) {
+                <li>{{ rec }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-analysis">
+          <div class="empty-icon">🔮</div>
+          <h3>Žiadna analýza</h3>
+          <p>Kliknite na "Analyzovať" pre získanie AI hodnotenia vášho portfólia</p>
+        </div>
+      }
+
+      <!-- Current Positions Summary -->
+      @if (positions().length > 0) {
+        <div class="positions-summary">
+          <h3>Aktuálne pozície ({{ positions().length }})</h3>
+          <div class="positions-chips">
+            @for (pos of positions(); track pos.id) {
+              <div class="position-chip" [class.positive]="pos.pnl >= 0" [class.negative]="pos.pnl < 0">
+                <span class="chip-symbol">{{ pos.assetSymbol }}</span>
+                <span class="chip-pnl">{{ pos.pnlPercent >= 0 ? '+' : '' }}{{ pos.pnlPercent.toFixed(1) }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Chat Tab -->
+    <div class="chat-section">
+      <div class="chat-container" #chatContainer>
+        @if (chatHistory().length === 0) {
+          <div class="chat-welcome">
+            <div class="welcome-icon">💬</div>
+            <h3>Začnite konverzáciu</h3>
+            <p>Opýtajte sa na čokoľvek ohľadom investovania, portfólia alebo trhov.</p>
+            <div class="suggested-questions">
+              <button (click)="chatInput.set('Ako by som mal začať investovať?'); sendMessage()">
+                Ako by som mal začať investovať?
+              </button>
+              <button (click)="chatInput.set('Čo je diverzifikácia?'); sendMessage()">
+                Čo je diverzifikácia?
+              </button>
+              <button (click)="chatInput.set('Aké sú riziká investovania do krypta?'); sendMessage()">
+                Riziká investovania do krypta
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="messages">
+            @for (message of chatHistory(); track message.id) {
+              <div class="message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+                <div class="message-avatar">
+                  @if (message.role === 'user') {
+                    👤
+                  } @else {
+                    🤖
+                  }
+                </div>
+                <div class="message-content">
+                  <div class="message-text">{{ message.content }}</div>
+                  <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+                </div>
+              </div>
+            }
+            @if (isLoading()) {
+              <div class="message assistant">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                  <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="chat-input-area">
+        @if (chatHistory().length > 0) {
+          <button class="clear-chat-btn" (click)="clearChat()">
+            🗑️ Vymazať
+          </button>
+        }
+        <div class="input-wrapper">
+          <input 
+            type="text"
+            placeholder="Napíšte správu..."
+            [value]="chatInput()"
+            (input)="chatInput.set($any($event.target).value)"
+            (keypress)="onKeyPress($event)"
+            [disabled]="isLoading()">
+          <button 
+            class="send-btn"
+            [disabled]="!chatInput().trim() || isLoading()"
+            (click)="sendMessage()">
+            @if (isLoading()) {
+              <span class="spinner-small"></span>
+            } @else {
+              ➤
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

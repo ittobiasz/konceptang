@@ -1,0 +1,137 @@
+<div class="assets-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Trhy</h1>
+      <p class="subtitle">Preskúmajte a obchodujte s kryptomenami a akciami</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-label">Celkom</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ stats().crypto }}</span>
+        <span class="stat-label">Krypto</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ stats().stocks }}</span>
+        <span class="stat-label">Akcie</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="toolbar">
+    <div class="filter-tabs">
+      @for (filter of filters; track filter.value) {
+        <button 
+          class="filter-btn" 
+          [class.active]="activeFilter() === filter.value"
+          (click)="setFilter(filter.value)">
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        placeholder="Hľadať aktíva..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)">
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="clearSearch()">✕</button>
+      }
+    </div>
+
+    <div class="sort-options">
+      <span class="sort-label">Zoradiť:</span>
+      <button 
+        class="sort-btn" 
+        [class.active]="sortBy() === 'name'"
+        (click)="setSortBy('name')">
+        Názov
+        @if (sortBy() === 'name') {
+          <span class="sort-arrow">{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+        }
+      </button>
+      <button 
+        class="sort-btn" 
+        [class.active]="sortBy() === 'price'"
+        (click)="setSortBy('price')">
+        Cena
+        @if (sortBy() === 'price') {
+          <span class="sort-arrow">{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+        }
+      </button>
+      <button 
+        class="sort-btn" 
+        [class.active]="sortBy() === 'change'"
+        (click)="setSortBy('change')">
+        Zmena
+        @if (sortBy() === 'change') {
+          <span class="sort-arrow">{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Načítavam trhy...</p>
+    </div>
+  } @else if (filteredAssets().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3>Žiadne výsledky</h3>
+      <p>Skúste upraviť vyhľadávanie alebo filtre</p>
+      <button class="btn btn-secondary" (click)="clearSearch(); setFilter('all')">
+        Zobraziť všetky
+      </button>
+    </div>
+  } @else {
+    <div class="assets-grid">
+      @for (asset of filteredAssets(); track asset.assetId) {
+        <a [routerLink]="['/trade', asset.assetId]" class="asset-card">
+          <div class="card-header">
+            <div class="asset-info">
+              <span class="asset-icon">{{ asset.image }}</span>
+              <div class="asset-names">
+                <span class="asset-symbol">{{ asset.symbol }}</span>
+                <span class="asset-name">{{ asset.name }}</span>
+              </div>
+            </div>
+            <span class="type-badge" [class.crypto]="asset.assetType === 'crypto'" [class.stock]="asset.assetType === 'stock'">
+              {{ getAssetTypeLabel(asset.assetType) }}
+            </span>
+          </div>
+
+          <div class="card-price">
+            <span class="price">{{ formatPrice(asset.price) }}</span>
+            <span class="change" [class.positive]="isPositive(asset.changePercent24h)" [class.negative]="!isPositive(asset.changePercent24h)">
+              {{ formatChange(asset.changePercent24h) }}
+            </span>
+          </div>
+
+          <div class="card-footer">
+            <div class="footer-item">
+              <span class="footer-label">Objem 24h</span>
+              <span class="footer-value">{{ formatMarketCap(asset.volume24h) }}</span>
+            </div>
+            <div class="footer-item">
+              <span class="footer-label">Trhová kap.</span>
+              <span class="footer-value">{{ formatMarketCap(asset.marketCap) }}</span>
+            </div>
+          </div>
+
+          <div class="card-action">
+            <span>Obchodovať</span>
+            <span class="arrow">→</span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

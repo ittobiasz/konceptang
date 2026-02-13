@@ -1,0 +1,178 @@
+<div class="trade-page">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Načítavam aktívum...</p>
+    </div>
+  } @else if (!asset()) {
+    <div class="error-state">
+      <div class="error-icon">❌</div>
+      <h2>Aktívum nenájdené</h2>
+      <a routerLink="/assets" class="btn btn-primary">Späť na trhy</a>
+    </div>
+  } @else {
+    <div class="trade-layout">
+      <!-- Asset Info -->
+      <div class="asset-section">
+        <a routerLink="/assets" class="back-link">
+          <span>←</span> Späť na trhy
+        </a>
+
+        <div class="asset-header">
+          <div class="asset-icon-large">{{ asset()!.image }}</div>
+          <div class="asset-info">
+            <h1>{{ asset()!.name }}</h1>
+            <div class="asset-meta">
+              <span class="symbol">{{ asset()!.symbol }}</span>
+              <span class="type-badge" [class.crypto]="asset()!.assetType === 'crypto'" [class.stock]="asset()!.assetType === 'stock'">
+                {{ asset()!.assetType === 'crypto' ? 'Krypto' : 'Akcia' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="price-display">
+          <div class="current-price">{{ formatCurrency(asset()!.price) }}</div>
+          <div class="price-change" [class.positive]="isPositive(asset()!.changePercent24h)" [class.negative]="!isPositive(asset()!.changePercent24h)">
+            {{ formatChange(asset()!.changePercent24h) }}
+            <span class="period">24h</span>
+          </div>
+        </div>
+
+        <!-- Position Info -->
+        @if (position()) {
+          <div class="position-card">
+            <div class="position-header">
+              <h3>Vaša pozícia</h3>
+            </div>
+            <div class="position-stats">
+              <div class="stat">
+                <span class="stat-label">Množstvo</span>
+                <span class="stat-value">{{ position()!.quantity }} {{ asset()!.symbol }}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Priem. cena</span>
+                <span class="stat-value">{{ formatCurrency(position()!.averagePrice) }}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Hodnota</span>
+                <span class="stat-value">{{ formatCurrency(position()!.quantity * asset()!.price) }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Market Info -->
+        <div class="market-info">
+          <h3>Informácie o trhu</h3>
+          <div class="info-grid">
+            @if (asset()!.volume24h) {
+              <div class="info-item">
+                <span class="info-label">Objem 24h</span>
+                <span class="info-value">{{ currencyService.formatCompact(asset()!.volume24h!) }}</span>
+              </div>
+            }
+            @if (asset()!.marketCap) {
+              <div class="info-item">
+                <span class="info-label">Trhová kapitalizácia</span>
+                <span class="info-value">{{ currencyService.formatCompact(asset()!.marketCap!) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Trade Form -->
+      <div class="trade-section">
+        <div class="trade-card">
+          <div class="trade-tabs">
+            <button 
+              class="trade-tab" 
+              [class.active]="tradeType() === 'buy'"
+              [class.buy]="tradeType() === 'buy'"
+              (click)="setTradeType('buy')">
+              Kúpiť
+            </button>
+            <button 
+              class="trade-tab" 
+              [class.active]="tradeType() === 'sell'"
+              [class.sell]="tradeType() === 'sell'"
+              (click)="setTradeType('sell')">
+              Predať
+            </button>
+          </div>
+
+          <div class="trade-form">
+            <!-- Balance / Position display -->
+            <div class="available-display">
+              @if (tradeType() === 'buy') {
+                <span class="available-label">Dostupná hotovosť</span>
+                <span class="available-value">{{ formatCurrency(authService.getBalance()) }}</span>
+              } @else {
+                <span class="available-label">Vlastníte</span>
+                <span class="available-value">{{ position()?.quantity || 0 }} {{ asset()!.symbol }}</span>
+              }
+            </div>
+
+            <!-- Quantity Input -->
+            <div class="quantity-input">
+              <label>Množstvo</label>
+              <div class="input-group">
+                <button class="qty-btn" (click)="decrementQuantity()" [disabled]="quantity() <= 0">−</button>
+                <input 
+                  type="number" 
+                  [value]="quantity()"
+                  (input)="setQuantity($any($event.target).valueAsNumber || 0)"
+                  min="0"
+                  step="1">
+                <button class="qty-btn" (click)="incrementQuantity()">+</button>
+              </div>
+              <button class="max-btn" (click)="setMaxQuantity()">MAX</button>
+            </div>
+
+            <!-- Price Display -->
+            <div class="price-row">
+              <span class="label">Cena za jednotku</span>
+              <span class="value">{{ formatCurrency(asset()!.price) }}</span>
+            </div>
+
+            <!-- Total -->
+            <div class="total-row">
+              <span class="label">Celkom</span>
+              <span class="value">{{ formatCurrency(total) }}</span>
+            </div>
+
+            <!-- Message -->
+            @if (message()) {
+              <div class="message" [class.success]="message()!.type === 'success'" [class.error]="message()!.type === 'error'">
+                {{ message()!.text }}
+              </div>
+            }
+
+            <!-- Submit Button -->
+            <button 
+              class="submit-btn"
+              [class.buy]="tradeType() === 'buy'"
+              [class.sell]="tradeType() === 'sell'"
+              [disabled]="!canTrade || isSubmitting()"
+              (click)="executeTrade()">
+              @if (isSubmitting()) {
+                <span class="spinner-small"></span>
+                Spracovávam...
+              } @else if (tradeType() === 'buy') {
+                Kúpiť {{ asset()!.symbol }}
+              } @else {
+                Predať {{ asset()!.symbol }}
+              }
+            </button>
+
+            <!-- Disclaimer -->
+            <p class="disclaimer">
+              Toto je papierové obchodovanie. Žiadne reálne peniaze nie sú použité.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

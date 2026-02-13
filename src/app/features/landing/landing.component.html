@@ -1,0 +1,153 @@
+<div class="landing-page">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-badge">
+        <span class="badge-dot"></span>
+        Platforma na papierové obchodovanie
+      </span>
+      
+      <h1 class="hero-title">
+        Investujte do <span class="gradient-text">Akcií & Krypta</span><br>
+        Bez rizika
+      </h1>
+      
+      <p class="hero-description">
+        Cvičte obchodovanie s virtuálnym zostatkom $100 000. 
+        Skutočné trhové dáta, AI analýzy, nulové riziko.
+      </p>
+      
+      <div class="hero-actions">
+        <a routerLink="/portfolio" class="btn btn-primary">
+          <span class="btn-icon">📊</span>
+          Moje portfólio
+        </a>
+        <a routerLink="/assets" class="btn btn-secondary">
+          Prezerať trhy
+        </a>
+      </div>
+    </div>
+    
+    <!-- Live Market Widget -->
+    <div class="market-widget">
+      <div class="widget-header">
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+        <span class="widget-title">Prehľad trhov</span>
+        <div class="widget-tabs">
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab() === 'crypto'"
+            (click)="setActiveTab('crypto')">
+            Krypto
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="activeTab() === 'stocks'"
+            (click)="setActiveTab('stocks')">
+            Akcie
+          </button>
+        </div>
+      </div>
+      
+      <div class="widget-content">
+        @if (isLoadingMarket()) {
+          <div class="loading-skeleton">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else {
+          @for (asset of getCurrentAssets(); track asset.assetId) {
+            <a [routerLink]="['/trade', asset.assetId]" class="asset-row">
+              <div class="asset-info">
+                <span class="asset-icon">{{ asset.image }}</span>
+                <div class="asset-names">
+                  <span class="asset-symbol">{{ asset.symbol }}</span>
+                  <span class="asset-name">{{ asset.name }}</span>
+                </div>
+              </div>
+              <div class="asset-chart">
+                <!-- Mini chart placeholder -->
+                <svg viewBox="0 0 60 24" class="mini-chart" [class.positive]="isPositiveChange(asset.changePercent24h)">
+                  <path d="M0,18 L10,14 L20,16 L30,10 L40,12 L50,6 L60,8" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="asset-price">
+                <span class="price">{{ formatPrice(asset.price) }}</span>
+                <span class="change" [class.positive]="isPositiveChange(asset.changePercent24h)" [class.negative]="!isPositiveChange(asset.changePercent24h)">
+                  {{ formatChange(asset.changePercent24h) }}
+                </span>
+              </div>
+            </a>
+          }
+        }
+      </div>
+      
+      <div class="widget-footer">
+        <a routerLink="/assets" class="view-all-link">
+          Zobraziť všetky trhy
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      @for (stat of stats; track stat.label) {
+        <div class="stat-card">
+          <div class="stat-icon">{{ stat.icon }}</div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="section-header">
+      <h2>Prečo si vybrať InvestIQ<span class="accent">?</span></h2>
+      <p>Všetko čo potrebujete na učenie sa obchodovania bez rizika skutočných peňazí</p>
+    </div>
+    
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <div class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>Pripravení začať investovať?</h2>
+      <p>Vytvorte si bezplatný účet a začnite obchodovať s virtuálnymi $100,000</p>
+      @if (!authService.isAuthenticated()) {
+        <a routerLink="/register" class="btn btn-primary btn-large">
+          <span class="btn-icon">🚀</span>
+          Vytvoriť účet zadarmo
+        </a>
+      } @else {
+        <a routerLink="/portfolio" class="btn btn-primary btn-large">
+          <span class="btn-icon">📊</span>
+          Pokračovať do portfólia
+        </a>
+      }
+    </div>
+  </section>
+</div>

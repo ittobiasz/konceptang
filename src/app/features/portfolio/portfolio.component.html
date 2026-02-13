@@ -1,0 +1,173 @@
+<div class="portfolio-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Moje Portfólio</h1>
+      <p class="welcome-text">Vitajte späť, {{ user()?.displayName || 'Investor' }}</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/assets" class="btn btn-primary">
+        <span>📈</span> Obchodovať
+      </a>
+      <button class="btn btn-secondary" (click)="resetPortfolio()">
+        <span>🔄</span> Reset
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Načítavam portfólio...</p>
+    </div>
+  } @else {
+    <!-- Portfolio Summary -->
+    <div class="summary-grid">
+      <div class="summary-card main">
+        <div class="card-label">Celková hodnota účtu</div>
+        <div class="card-value large">{{ formatCurrency(totalEquity()) }}</div>
+        <div class="card-breakdown">
+          <span>Investované: {{ formatCurrency(totalValue()) }}</span>
+          <span>Hotovosť: {{ formatCurrency(cashBalance()) }}</span>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-label">Celkový P&L</div>
+        <div class="card-value" [class.positive]="isPositive(totalPnl())" [class.negative]="!isPositive(totalPnl())">
+          {{ formatCurrency(totalPnl()) }}
+        </div>
+        <div class="card-percent" [class.positive]="isPositive(totalPnlPercent())" [class.negative]="!isPositive(totalPnlPercent())">
+          {{ formatPercent(totalPnlPercent()) }}
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-label">Investované</div>
+        <div class="card-value">{{ formatCurrency(totalCost()) }}</div>
+        <div class="card-subtext">Nákupná cena</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-label">Hotovosť</div>
+        <div class="card-value">{{ formatCurrency(cashBalance()) }}</div>
+        <div class="card-subtext">Dostupné na obchodovanie</div>
+      </div>
+    </div>
+
+    <!-- Positions Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Pozície</h2>
+        <span class="badge">{{ positions().length }} aktív</span>
+      </div>
+
+      @if (positions().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <h3>Žiadne pozície</h3>
+          <p>Zatiaľ nemáte žiadne otvorené pozície. Začnite obchodovať!</p>
+          <a routerLink="/assets" class="btn btn-primary">
+            <span>🚀</span> Prezerať trhy
+          </a>
+        </div>
+      } @else {
+        <div class="positions-table">
+          <div class="table-header">
+            <div class="col-asset">Aktívum</div>
+            <div class="col-type">Typ</div>
+            <div class="col-quantity">Množstvo</div>
+            <div class="col-avg-price">Priem. cena</div>
+            <div class="col-current-price">Aktuálna cena</div>
+            <div class="col-value">Hodnota</div>
+            <div class="col-pnl">P&L</div>
+            <div class="col-actions"></div>
+          </div>
+          
+          @for (position of positions(); track position.id) {
+            <a [routerLink]="['/trade', position.assetId]" class="table-row">
+              <div class="col-asset">
+                <div class="asset-info">
+                  <span class="asset-icon">{{ position.quote?.image || '💰' }}</span>
+                  <div class="asset-details">
+                    <span class="asset-symbol">{{ position.assetSymbol }}</span>
+                    <span class="asset-name">{{ position.assetName }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-type">
+                <span class="type-badge" [class.crypto]="position.assetType === 'crypto'" [class.stock]="position.assetType === 'stock'">
+                  {{ getAssetTypeLabel(position.assetType) }}
+                </span>
+              </div>
+              <div class="col-quantity">{{ position.quantity }}</div>
+              <div class="col-avg-price">{{ formatCurrency(position.averagePrice) }}</div>
+              <div class="col-current-price">{{ formatCurrency(position.currentPrice) }}</div>
+              <div class="col-value">{{ formatCurrency(position.marketValue) }}</div>
+              <div class="col-pnl">
+                <span class="pnl-value" [class.positive]="isPositive(position.pnl)" [class.negative]="!isPositive(position.pnl)">
+                  {{ formatCurrency(position.pnl) }}
+                </span>
+                <span class="pnl-percent" [class.positive]="isPositive(position.pnlPercent)" [class.negative]="!isPositive(position.pnlPercent)">
+                  {{ formatPercent(position.pnlPercent) }}
+                </span>
+              </div>
+              <div class="col-actions">
+                <span class="action-arrow">→</span>
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Recent Trades Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Posledné obchody</h2>
+        <span class="badge">{{ recentTrades().length }} obchodov</span>
+      </div>
+
+      @if (recentTrades().length === 0) {
+        <div class="empty-state small">
+          <p>Zatiaľ žiadne obchody</p>
+        </div>
+      } @else {
+        <div class="trades-list">
+          @for (trade of recentTrades(); track trade.id) {
+            <div class="trade-item">
+              <div class="trade-info">
+                <div class="trade-main">
+                  <span class="trade-type" [class.buy]="trade.type === 'buy'" [class.sell]="trade.type === 'sell'">
+                    {{ getTradeTypeLabel(trade.type) }}
+                  </span>
+                  <span class="trade-asset">{{ trade.quantity }} {{ trade.assetSymbol }}</span>
+                </div>
+                <div class="trade-details">
+                  <span>@ {{ formatCurrency(trade.price) }}</span>
+                  <span class="trade-date">{{ formatDate(trade.timestamp) }}</span>
+                </div>
+              </div>
+              <div class="trade-total" [class.buy]="trade.type === 'buy'" [class.sell]="trade.type === 'sell'">
+                {{ trade.type === 'buy' ? '-' : '+' }}{{ formatCurrency(trade.total) }}
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- AI Advisor Link -->
+    <section class="ai-section">
+      <div class="ai-card">
+        <div class="ai-icon">🤖</div>
+        <div class="ai-content">
+          <h3>AI Analýza portfólia</h3>
+          <p>Získajte personalizované odporúčania a hodnotenie rizika od AI poradcu.</p>
+        </div>
+        <a routerLink="/ai-advisor" class="btn btn-primary">
+          <span>✨</span> Analyzovať
+        </a>
+      </div>
+    </section>
+  }
+</div>
