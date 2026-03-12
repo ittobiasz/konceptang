@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-content">
       <h1>
-        <span class="ai-icon">🤖</span>
+        <span class="ai-icon"></span>
         AI Poradca
       </h1>
       <p class="subtitle">Personalizovaná analýza a investičné odporúčania</p>
@@ -18,7 +18,7 @@
       class="tab-btn" 
       [class.active]="activeTab() === 'analysis'"
       (click)="setActiveTab('analysis')">
-      <span>📊</span> Analýza portfólia
+      <span></span> Analýza portfólia
     </button>
     <button 
       class="tab-btn" 
@@ -90,7 +90,7 @@
 
             <div class="score-card">
               <div class="score-header">
-                <span class="score-icon">🎯</span>
+                <span class="score-icon">★</span>
                 <span class="score-label">Diverzifikácia</span>
               </div>
               <div class="score-value">
@@ -179,7 +179,7 @@
                   @if (message.role === 'user') {
                     👤
                   } @else {
-                    🤖
+                    AI
                   }
                 </div>
                 <div class="message-content">
@@ -190,7 +190,7 @@
             }
             @if (isLoading()) {
               <div class="message assistant">
-                <div class="message-avatar">🤖</div>
+                <div class="message-avatar">AI</div>
                 <div class="message-content">
                   <div class="typing-indicator">
                     <span></span>

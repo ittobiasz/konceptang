@@ -1,6 +1,7 @@
 import { Injectable, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from './auth.service';
+import { FirebaseService, FirestorePosition, FirestoreTrade } from './firebase.service';
 import { Position, PositionWithQuote, Trade, PortfolioSnapshot, AssetQuote } from '../shared/models';
 
 const POSITIONS_KEY = 'investiq_positions';
@@ -12,6 +13,7 @@ const TRADES_KEY = 'investiq_trades';
 export class PortfolioService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly authService = inject(AuthService);
+  private readonly firebaseService = inject(FirebaseService);
 
   private readonly _positions = signal<Position[]>([]);
   private readonly _trades = signal<Trade[]>([]);
@@ -22,11 +24,44 @@ export class PortfolioService {
   readonly isLoading = this._isLoading.asReadonly();
 
   constructor() {
-    this.loadData();
+    // Load data immediately (async operations will happen in background)
+    this.initializeData();
+  }
+
+  // inicijalizuje data
+  private initializeData(): void {
+    this._isLoading.set(true);
+    const user = this.authService.user();
+    
+    if (user?.uid) {
+      // Load from Firestore in background
+      this.firebaseService.getPositions(user.uid)
+        .then(positions => {
+          this._positions.set(positions.map(p => this.convertFirestorePosition(p)));
+        })
+        .catch(err => {
+          console.warn('Firestore positions load failed:', err);
+          this.loadDataFromStorage();
+        });
+
+      this.firebaseService.getTrades(user.uid)
+        .then(trades => {
+          this._trades.set(trades.map(t => this.convertFirestoreTrade(t)));
+        })
+        .catch(err => {
+          console.warn('Firestore trades load failed:', err);
+        });
+    } else {
+      // Demo user or not authenticated
+      if (isPlatformBrowser(this.platformId)) {
+        this.loadDataFromStorage();
+      }
+    }
+    this._isLoading.set(false);
   }
 
   // nacita data z local storage
-  private loadData(): void {
+  private loadDataFromStorage(): void {
     if (isPlatformBrowser(this.platformId)) {
       const positions = localStorage.getItem(POSITIONS_KEY);
       const trades = localStorage.getItem(TRADES_KEY);
@@ -49,18 +84,102 @@ export class PortfolioService {
     }
   }
 
-  // ulozi pozicie do uloziska
+  // ulozi pozicie
   private savePositions(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(POSITIONS_KEY, JSON.stringify(this._positions()));
     }
+
+    const user = this.authService.user();
+    if (user?.uid) {
+      this._positions().forEach(position => {
+        const firestorePos = this.convertToFirestorePosition(position);
+        this.firebaseService.savePosition(firestorePos);
+      });
+    }
   }
 
-  // ulozi obchody do uloziska
+  // ulozi obchody
   private saveTrades(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(TRADES_KEY, JSON.stringify(this._trades()));
     }
+
+    const user = this.authService.user();
+    if (user?.uid) {
+      this._trades().forEach(trade => {
+        const firestoreTrade = this.convertToFirestoreTrade(trade);
+        this.firebaseService.saveTrade(firestoreTrade);
+      });
+    }
+  }
+
+  // konvertuje local Position na Firestore Position
+  private convertToFirestorePosition(position: Position): FirestorePosition {
+    const user = this.authService.user();
+    return {
+      id: position.id,
+      userId: user?.uid || 'demo',
+      assetId: position.assetId,
+      assetSymbol: position.assetSymbol,
+      assetName: position.assetName,
+      assetType: position.assetType,
+      quantity: position.quantity,
+      averagePrice: position.averagePrice,
+      createdAt: position.createdAt,
+      updatedAt: position.updatedAt
+    };
+  }
+
+  // konvertuje local Trade na Firestore Trade
+  private convertToFirestoreTrade(trade: Trade): FirestoreTrade {
+    const user = this.authService.user();
+    return {
+      id: trade.id,
+      userId: user?.uid || 'demo',
+      assetId: trade.assetId,
+      assetSymbol: trade.assetSymbol,
+      assetName: trade.assetName,
+      assetType: trade.assetType,
+      type: trade.type,
+      quantity: trade.quantity,
+      price: trade.price,
+      total: trade.total,
+      timestamp: trade.timestamp
+    };
+  }
+
+  // konvertuje Firestore Position na local Position
+  private convertFirestorePosition(firestorePos: FirestorePosition): Position {
+    return {
+      id: firestorePos.id,
+      userId: firestorePos.userId,
+      assetId: firestorePos.assetId,
+      assetSymbol: firestorePos.assetSymbol,
+      assetName: firestorePos.assetName,
+      assetType: firestorePos.assetType,
+      quantity: firestorePos.quantity,
+      averagePrice: firestorePos.averagePrice,
+      createdAt: firestorePos.createdAt,
+      updatedAt: firestorePos.updatedAt
+    };
+  }
+
+  // konvertuje Firestore Trade na local Trade
+  private convertFirestoreTrade(firestoreTrade: FirestoreTrade): Trade {
+    return {
+      id: firestoreTrade.id,
+      userId: firestoreTrade.userId,
+      assetId: firestoreTrade.assetId,
+      assetSymbol: firestoreTrade.assetSymbol,
+      assetName: firestoreTrade.assetName,
+      assetType: firestoreTrade.assetType,
+      type: firestoreTrade.type,
+      quantity: firestoreTrade.quantity,
+      price: firestoreTrade.price,
+      total: firestoreTrade.total,
+      timestamp: firestoreTrade.timestamp
+    };
   }
 
   // vrati pozicie pouzivatela

@@ -14,7 +14,7 @@ export class MarketDataService {
   private readonly stockService = inject(StockService);
 
   private readonly allAssets$ = combineLatest([
-    this.cryptoService.getCryptos(50),
+    this.cryptoService.getCryptos(100),
     this.stockService.getStocks()
   ]).pipe(
     map(([cryptos, stocks]) => {
@@ -28,6 +28,21 @@ export class MarketDataService {
   // vrati vsetky aktiva
   getAllAssets(): Observable<AssetQuote[]> {
     return this.allAssets$;
+  }
+
+  // vrati vsetky aktiva s force refresh (fresh API call)
+  getAllAssetsFresh(): Observable<AssetQuote[]> {
+    return combineLatest([
+      this.cryptoService.getCryptos(100, true),
+      this.stockService.getStocks(true)
+    ]).pipe(
+      map(([cryptos, stocks]) => {
+        const cryptoQuotes = cryptos.map(c => this.cryptoService.mapToQuote(c));
+        const stockQuotes = stocks.map(s => this.stockService.mapToQuote(s));
+        return [...cryptoQuotes, ...stockQuotes];
+      }),
+      shareReplay(1)
+    );
   }
 
   // vrati aktiva podla typu

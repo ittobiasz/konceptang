@@ -246,6 +246,15 @@
   }
 }
 
+// Chart Section
+.chart-section {
+  margin-top: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
 // Trade Section
 .trade-section {
   @media (max-width: 900px) {

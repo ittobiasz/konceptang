@@ -108,6 +108,19 @@
             </span>
           </div>
 
+          <div class="card-chart">
+            <svg viewBox="0 0 120 40" preserveAspectRatio="none" class="sparkline-svg">
+              <defs>
+                <linearGradient [attr.id]="'grad-' + asset.assetId" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" [attr.stop-color]="getSparklineColor(asset)" stop-opacity="0.3"/>
+                  <stop offset="100%" [attr.stop-color]="getSparklineColor(asset)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path [attr.d]="getSparklinePath(asset) + ' L120,40 L0,40 Z'" [attr.fill]="'url(#grad-' + asset.assetId + ')'" />
+              <path [attr.d]="getSparklinePath(asset)" fill="none" [attr.stroke]="getSparklineColor(asset)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
           <div class="card-price">
             <span class="price">{{ formatPrice(asset.price) }}</span>
             <span class="change" [class.positive]="isPositive(asset.changePercent24h)" [class.negative]="!isPositive(asset.changePercent24h)">
@@ -121,14 +134,14 @@
               <span class="footer-value">{{ formatMarketCap(asset.volume24h) }}</span>
             </div>
             <div class="footer-item">
-              <span class="footer-label">Trhová kap.</span>
+              <span class="footer-label">Trhova kap.</span>
               <span class="footer-value">{{ formatMarketCap(asset.marketCap) }}</span>
             </div>
           </div>
 
           <div class="card-action">
-            <span>Obchodovať</span>
-            <span class="arrow">→</span>
+            <span>Obchodovat</span>
+            <span class="arrow">-></span>
           </div>
         </a>
       }

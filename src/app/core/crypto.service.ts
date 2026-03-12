@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of, shareReplay, timer, switchMap, BehaviorSubject } from 'rxjs';
+import { Observable, map, catchError, of, shareReplay, timer, switchMap, BehaviorSubject, retry, retryWhen, delay } from 'rxjs';
 import { AssetQuote, CryptoAsset } from '../shared/models';
 
-// 🔥 CoinGecko API - spolahlivy a zadarmo
+//  CoinGecko API - spolahlivy a zadarmo
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
 interface CoinGeckoMarket {
@@ -25,50 +25,67 @@ interface CoinGeckoMarket {
 export class CryptoService {
   private readonly http = inject(HttpClient);
   private readonly cache$ = new BehaviorSubject<CryptoAsset[]>([]);
-  private readonly CACHE_DURATION = 60000; // 1 minuta cache
+  private readonly CACHE_DURATION = 30000; // 30 sekund cache - viac frequent updates
   private lastFetch = 0;
   private isLoading = false;
+  private retryAttempts = 0;
 
-  // 🚀 nacita kryptomeny OKAMZITE z cache/fallback
-  getCryptos(limit = 50): Observable<CryptoAsset[]> {
+  // nacita kryptomeny okamzite z cache/fallback
+  getCryptos(limit = 50, forceRefresh = false): Observable<CryptoAsset[]> {
     const now = Date.now();
     
-    // Ak mame cache, vrat ju okamzite
-    if (this.cache$.value.length > 0 && now - this.lastFetch < this.CACHE_DURATION) {
-      return of(this.cache$.value.slice(0, limit));
-    }
-
-    // Vrat fallback OKAMZITE, aktualizuj na pozadi
-    const fallback = this.getFallbackCryptos().slice(0, limit);
+    // Vrat fallback okamzite, akualizuj na pozadi
     if (this.cache$.value.length === 0) {
       this.cache$.next(this.getFallbackCryptos());
     }
 
-    // Spusti update na pozadi (len raz)
-    if (!this.isLoading) {
+    // Vynuť update z API ak cache je starý, je to prvý krát, alebo je force refresh
+    if ((now - this.lastFetch >= this.CACHE_DURATION || forceRefresh) && !this.isLoading) {
       this.isLoading = true;
       this.loadCryptosInBackground(limit);
     }
 
-    return of(this.cache$.value.length > 0 ? this.cache$.value.slice(0, limit) : fallback);
+    // Vrať BehaviorSubject ktorý sa automaticky aktualizuje
+    return this.cache$.pipe(
+      map(cryptos => cryptos.slice(0, limit)),
+      shareReplay(1)
+    );
   }
 
-  // 🔄 nacita kryptomeny na pozadi bez blokovania UI
+  // nacita kryptomeny na pozadi bez blokovania UI
   private loadCryptosInBackground(limit: number): void {
-    this.http.get<CoinGeckoMarket[]>(
-      `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
-    ).subscribe({
-      next: (response) => {
-        const cryptos = response.map(coin => this.mapCoinGeckoToCryptoAsset(coin));
-        this.cache$.next(cryptos);
-        this.lastFetch = Date.now();
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.warn('CoinGecko API failed:', err);
-        this.isLoading = false;
-      }
-    });
+    const url = `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`;
+    
+    // Retry logic sa pohne ONLY v subscribe handleri
+    let attempts = 0;
+    const tryFetch = (): void => {
+      this.http.get<CoinGeckoMarket[]>(url).subscribe({
+        next: (response) => {
+          if (response && response.length > 0) {
+            const cryptos = response.map(coin => this.mapCoinGeckoToCryptoAsset(coin));
+            this.cache$.next(cryptos);
+            this.lastFetch = Date.now();
+            this.retryAttempts = 0;
+            console.log('✓ Crypto prices updated from API');
+          }
+          this.isLoading = false;
+        },
+        error: (err) => {
+          attempts++;
+          if (attempts < 3) {
+            const waitTime = Math.pow(2, attempts - 1) * 1000;
+            console.warn(`CoinGecko retry attempt ${attempts} after ${waitTime}ms:`, err.message);
+            setTimeout(tryFetch, waitTime);
+          } else {
+            console.error('CoinGecko API failed after 3 attempts:', err.message);
+            this.isLoading = false;
+            // Cache ostane nezmenena
+          }
+        }
+      });
+    };
+    
+    tryFetch();
   }
 
   // nacita kryptomenu podla id
@@ -184,14 +201,14 @@ export class CryptoService {
     );
   }
 
-  // vrati zalohu ak api nefunguje
+  // vrati zalohu ak api nefunguje - generic placeholder prices
   private getFallbackCryptos(): CryptoAsset[] {
     return [
-      { id: 'bitcoin', rank: '1', symbol: 'BTC', name: 'Bitcoin', supply: '19000000', maxSupply: '21000000', marketCapUsd: '1700000000000', volumeUsd24Hr: '30000000000', priceUsd: '96500.00', changePercent24Hr: '2.5', vwap24Hr: '95000' },
-      { id: 'ethereum', rank: '2', symbol: 'ETH', name: 'Ethereum', supply: '120000000', maxSupply: null, marketCapUsd: '380000000000', volumeUsd24Hr: '15000000000', priceUsd: '2650.00', changePercent24Hr: '1.8', vwap24Hr: '2600' },
-      { id: 'solana', rank: '3', symbol: 'SOL', name: 'Solana', supply: '400000000', maxSupply: null, marketCapUsd: '100000000000', volumeUsd24Hr: '3000000000', priceUsd: '195.00', changePercent24Hr: '4.07', vwap24Hr: '190' },
-      { id: 'ripple', rank: '4', symbol: 'XRP', name: 'XRP', supply: '45000000000', maxSupply: '100000000000', marketCapUsd: '30000000000', volumeUsd24Hr: '2000000000', priceUsd: '2.45', changePercent24Hr: '1.2', vwap24Hr: '2.40' },
-      { id: 'dogecoin', rank: '5', symbol: 'DOGE', name: 'Dogecoin', supply: '140000000000', maxSupply: null, marketCapUsd: '14000000000', volumeUsd24Hr: '800000000', priceUsd: '0.25', changePercent24Hr: '3.5', vwap24Hr: '0.24' },
+      { id: 'bitcoin', rank: '1', symbol: 'BTC', name: 'Bitcoin', supply: '19000000', maxSupply: '21000000', marketCapUsd: '1700000000000', volumeUsd24Hr: '30000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
+      { id: 'ethereum', rank: '2', symbol: 'ETH', name: 'Ethereum', supply: '120000000', maxSupply: null, marketCapUsd: '380000000000', volumeUsd24Hr: '15000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
+      { id: 'solana', rank: '3', symbol: 'SOL', name: 'Solana', supply: '400000000', maxSupply: null, marketCapUsd: '100000000000', volumeUsd24Hr: '3000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
+      { id: 'ripple', rank: '4', symbol: 'XRP', name: 'XRP', supply: '45000000000', maxSupply: '100000000000', marketCapUsd: '30000000000', volumeUsd24Hr: '2000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
+      { id: 'dogecoin', rank: '5', symbol: 'DOGE', name: 'Dogecoin', supply: '140000000000', maxSupply: null, marketCapUsd: '14000000000', volumeUsd24Hr: '800000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
     ];
   }
 }

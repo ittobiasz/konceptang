@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MarketDataService, UnifiedMarketService, CurrencyService, AssetFilter } from '../../core';
 import { AssetQuote } from '../../shared/models';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap, of, interval } from 'rxjs';
 
 @Component({
   selector: 'app-assets',
@@ -29,6 +29,9 @@ export class AssetsComponent implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
   readonly sortBy = signal<'name' | 'price' | 'change'>('name');
   readonly sortOrder = signal<'asc' | 'desc'>('asc');
+
+  // Sparkline cache
+  private sparklineCache = new Map<string, string>();
 
   readonly filters: { value: AssetFilter; label: string }[] = [
     { value: 'all', label: 'Všetky' },
@@ -99,6 +102,18 @@ export class AssetsComponent implements OnInit, OnDestroy {
       });
       this.assets.set(updated);
       this.applyFilters();
+    });
+
+    // Auto-refresh kazdych 30 sekund
+    interval(30000).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.marketDataService.getAllAssetsFresh().pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(assets => {
+        this.assets.set(assets);
+        this.applyFilters();
+      });
     });
   }
 
@@ -189,5 +204,57 @@ export class AssetsComponent implements OnInit, OnDestroy {
   clearSearch(): void {
     this.searchQuery.set('');
     this.applyFilters();
+  }
+  getSparklinePath(asset: AssetQuote): string {
+    const key = asset.assetId + '-' + Math.round(asset.price * 100);
+    if (this.sparklineCache.has(key)) {
+      return this.sparklineCache.get(key)!;
+    }
+    const path = this.generateSparkline(asset);
+    this.sparklineCache.set(key, path);
+    return path;
+  }
+
+  private generateSparkline(asset: AssetQuote): string {
+    const points = 20;
+    const width = 120;
+    const height = 40;
+    const change = asset.changePercent24h ?? 0;
+    const seed = this.hashCode(asset.assetId);
+    const values: number[] = [];
+
+    let val = 50;
+    for (let i = 0; i < points; i++) {
+      const noise = Math.sin(seed + i * 0.7) * 8 + Math.cos(seed * 0.3 + i * 1.1) * 5;
+      val += noise + (change / points) * 1.5;
+      val = Math.max(5, Math.min(95, val));
+      values.push(val);
+    }
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+
+    const coords = values.map((v, i) => {
+      const x = (i / (points - 1)) * width;
+      const y = height - ((v - min) / range) * (height - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+
+    return 'M' + coords.join(' L');
+  }
+
+  private hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return hash;
+  }
+
+  getSparklineColor(asset: AssetQuote): string {
+    return (asset.changePercent24h ?? 0) >= 0 ? '#10b981' : '#ef4444';
   }
 }

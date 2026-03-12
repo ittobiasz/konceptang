@@ -1,16 +1,13 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of, forkJoin, shareReplay, BehaviorSubject, timer, switchMap } from 'rxjs';
+import { Observable, map, catchError, of, forkJoin, shareReplay, BehaviorSubject, timer, switchMap, retryWhen, delay } from 'rxjs';
 import { AssetQuote, StockAsset } from '../shared/models';
 
-// 🔥 Yahoo Finance API cez AllOrigins proxy (bez API kluca)
+//  Yahoo Finance API cez AllOrigins proxy (bez API kluca)
 const YAHOO_API = 'https://query1.finance.yahoo.com/v8/finance/chart';
 
 const STOCK_SYMBOLS = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
   { symbol: 'MSFT', name: 'Microsoft Corporation' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation' },
   { symbol: 'META', name: 'Meta Platforms Inc.' },
   { symbol: 'TSLA', name: 'Tesla Inc.' },
@@ -38,32 +35,31 @@ interface YahooChartResponse {
 export class StockService {
   private readonly http = inject(HttpClient);
   private readonly cache$ = new BehaviorSubject<StockAsset[]>([]);
-  private readonly CACHE_DURATION = 300000; // 5 minut cache
+  private readonly CACHE_DURATION = 30000; // 30 sekund cache - viac frequent updates
   private lastFetch = 0;
   private isLoading = false;
+  private retryAttempts = 0;
 
   // 🚀 nacita akcie OKAMZITE z fallback, potom aktualizuje na pozadi
-  getStocks(): Observable<StockAsset[]> {
+  getStocks(forceRefresh = false): Observable<StockAsset[]> {
     const now = Date.now();
     
-    // Ak mame cache, vrat ju okamzite
-    if (this.cache$.value.length > 0 && now - this.lastFetch < this.CACHE_DURATION) {
-      return of(this.cache$.value);
-    }
-
     // Vrat fallback OKAMZITE, aktualizuj na pozadi
     const fallbackStocks = this.getFallbackStocks();
     if (this.cache$.value.length === 0) {
       this.cache$.next(fallbackStocks);
     }
 
-    // Spusti update na pozadi (len raz)
-    if (!this.isLoading) {
+    // Vynuť update z API ak cache je starý, je to prvý krát, alebo je force refresh
+    if ((now - this.lastFetch >= this.CACHE_DURATION || forceRefresh) && !this.isLoading) {
       this.isLoading = true;
       this.loadStocksInBackground();
     }
 
-    return of(this.cache$.value.length > 0 ? this.cache$.value : fallbackStocks);
+    // Vrať BehaviorSubject ktorý sa automaticky aktualizuje
+    return this.cache$.asObservable().pipe(
+      shareReplay(1)
+    );
   }
 
   // 🔄 nacita akcie na pozadi bez blokovania UI
@@ -71,7 +67,13 @@ export class StockService {
     // Nacitame len 5 hlavnych akcii pre rychlost
     const topStocks = STOCK_SYMBOLS.slice(0, 5);
     const requests = topStocks.map(stock =>
-      this.getStockQuote(stock.symbol, stock.name)
+      this.getStockQuote(stock.symbol, stock.name).pipe(
+        catchError(err => {
+          console.warn(`Stock API failed for ${stock.symbol}:`, err.message);
+          // Vrati null, merge s fallback
+          return of(null);
+        })
+      )
     );
 
     forkJoin(requests).subscribe({
@@ -85,9 +87,12 @@ export class StockService {
         });
         this.cache$.next(mergedStocks);
         this.lastFetch = Date.now();
+        this.retryAttempts = 0;
+        console.log('✓ Stock prices updated from API');
         this.isLoading = false;
       },
-      error: () => {
+      error: (err) => {
+        console.error('Fatal stock error:', err);
         this.isLoading = false;
       }
     });
@@ -95,9 +100,13 @@ export class StockService {
 
   // nacita cenu jednej akcie cez Yahoo Finance
   private getStockQuote(symbol: string, name: string): Observable<StockAsset | null> {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`${YAHOO_API}/${symbol}?interval=1d&range=1d`)}`;
+    // Try primary proxy first, then fallback to secondary
+    const primaryProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(`${YAHOO_API}/${symbol}?interval=1d&range=1d`)}`;
+    const secondaryProxy = `https://corsproxy.io/?${encodeURIComponent(`${YAHOO_API}/${symbol}?interval=1d&range=1d`)}`;
 
-    return this.http.get<YahooChartResponse>(proxyUrl).pipe(
+    return this.http.get<YahooChartResponse>(primaryProxy, { timeout: 5000 }).pipe(
+      catchError(() => this.http.get<YahooChartResponse>(secondaryProxy, { timeout: 5000 }))
+    ).pipe(
       map(response => {
         if (response.chart.result && response.chart.result.length > 0) {
           const meta = response.chart.result[0].meta;
@@ -180,19 +189,19 @@ export class StockService {
     });
   }
 
-  // aktualne realne ceny (februar 2026)
+  // placeholder prices - API will override these
   private getFallbackPrices(): Record<string, { price: number; change: number }> {
     return {
-      'AAPL': { price: 232.50, change: 1.2 },
-      'MSFT': { price: 415.80, change: 0.8 },
-      'GOOGL': { price: 185.25, change: -0.5 },
-      'AMZN': { price: 228.35, change: 1.5 },
-      'NVDA': { price: 138.40, change: 3.2 },
-      'META': { price: 705.60, change: 2.1 },
-      'TSLA': { price: 355.75, change: -1.8 },
-      'JPM': { price: 265.80, change: 0.6 },
-      'NFLX': { price: 985.90, change: 1.4 },
-      'V': { price: 345.45, change: 0.9 },
+      'AAPL': { price: 0, change: 0 },
+      'MSFT': { price: 0, change: 0 },
+      'GOOGL': { price: 0, change: 0 },
+      'AMZN': { price: 0, change: 0 },
+      'NVDA': { price: 0, change: 0 },
+      'META': { price: 0, change: 0 },
+      'TSLA': { price: 0, change: 0 },
+      'JPM': { price: 0, change: 0 },
+      'NFLX': { price: 0, change: 0 },
+      'V': { price: 0, change: 0 },
     };
   }
 

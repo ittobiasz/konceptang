@@ -6,10 +6,10 @@
     </div>
     <div class="header-actions">
       <a routerLink="/assets" class="btn btn-primary">
-        <span>📈</span> Obchodovať
+        Obchodovaš
       </a>
       <button class="btn btn-secondary" (click)="resetPortfolio()">
-        <span>🔄</span> Reset
+        Reset
       </button>
     </div>
   </div>
@@ -63,11 +63,11 @@
 
       @if (positions().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">📊</div>
+          <div class="empty-icon">�</div>
           <h3>Žiadne pozície</h3>
           <p>Zatiaľ nemáte žiadne otvorené pozície. Začnite obchodovať!</p>
           <a routerLink="/assets" class="btn btn-primary">
-            <span>🚀</span> Prezerať trhy
+            Prezerať trhy
           </a>
         </div>
       } @else {
@@ -87,7 +87,7 @@
             <a [routerLink]="['/trade', position.assetId]" class="table-row">
               <div class="col-asset">
                 <div class="asset-info">
-                  <span class="asset-icon">{{ position.quote?.image || '💰' }}</span>
+                  <span class="asset-icon">{{ position.quote?.image || '�' }}</span>
                   <div class="asset-details">
                     <span class="asset-symbol">{{ position.assetSymbol }}</span>
                     <span class="asset-name">{{ position.assetName }}</span>

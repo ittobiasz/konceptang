@@ -1,4 +1,5 @@
 export * from './auth.service';
+export * from './auth.guard';
 export * from './theme.service';
 export * from './crypto.service';
 export * from './stock.service';
@@ -7,3 +8,8 @@ export * from './unified-market.service';
 export * from './currency.service';
 export * from './portfolio.service';
 export * from './ai-advisor.service';
+export * from './firebase.service';
+export * from './chart-data.service';
+export * from './price-alert.service';
+export * from './leaderboard.service';
+export * from './news.service';

@@ -30,42 +30,42 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   readonly features = [
     {
-      icon: '📊',
+      icon: '█',
       title: 'Real-time Dáta',
       description: 'Sledujte aktuálne ceny kryptomien a akcií v reálnom čase.'
     },
     {
-      icon: '💰',
+      icon: '✓',
       title: 'Bez Rizika',
       description: 'Cvičte obchodovanie s virtuálnymi $100,000 bez straty reálnych peňazí.'
     },
     {
-      icon: '🤖',
+      icon: '◈',
       title: 'AI Poradca',
       description: 'Získajte personalizované investičné odporúčania od AI.'
     },
     {
-      icon: '📈',
+      icon: '▲',
       title: 'Portfólio Analýza',
       description: 'Sledujte výkonnosť, P&L a diverzifikáciu vášho portfólia.'
     },
     {
-      icon: '🔒',
+      icon: '◆',
       title: 'Bezpečné',
       description: 'Všetky dáta sú uložené lokálne vo vašom prehliadači.'
     },
     {
-      icon: '🎓',
+      icon: '◉',
       title: 'Vzdelávanie',
       description: 'Naučte sa investovať skôr, než vložíte reálne peniaze.'
     }
   ];
 
   readonly stats = [
-    { value: '$100K', label: 'Štartovací zostatok', icon: '💵' },
-    { value: '50+', label: 'Kryptomien', icon: '₿' },
-    { value: '20+', label: 'US Akcií', icon: '📈' },
-    { value: 'AI', label: 'Portfólio poradca', icon: '🤖' }
+    { value: '$100K', label: 'Štartovací zostatok', icon: '◆' },
+    { value: '50+', label: 'Kryptomien', icon: '◈' },
+    { value: '20+', label: 'US Akcií', icon: '▲' },
+    { value: 'AI', label: 'Portfólio poradca', icon: '◉' }
   ];
 
   ngOnInit(): void {

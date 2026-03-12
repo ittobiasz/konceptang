@@ -58,8 +58,7 @@ import { AuthService } from '../../core';
         </div>
 
         <div class="demo-notice">
-          <span>💡</span>
-          <span>Demo režim: Zadajte akýkoľvek email a heslo pre prihlásenie</span>
+          <strong>Demo režim:</strong> Email: <code>demo@demo.com</code>, Heslo: <code>demo</code>
         </div>
       </div>
     </div>
@@ -198,8 +197,7 @@ import { AuthService } from '../../core';
 
     .demo-notice {
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      flex-direction: column;
       margin-top: 1.5rem;
       padding: 0.75rem;
       background: rgba(#10b981, 0.1);
@@ -207,6 +205,19 @@ import { AuthService } from '../../core';
       border-radius: 0.5rem;
       font-size: 0.8125rem;
       color: #9ca3af;
+      gap: 0.5rem;
+
+      strong {
+        color: #10b981;
+      }
+
+      code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-family: 'Courier New', monospace;
+        color: #fff;
+      }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

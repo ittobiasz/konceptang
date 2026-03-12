@@ -1,0 +1,293 @@
+<div class="alerts-page">
+  <div class="container">
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1>Price Alerts</h1>
+      <p>Vytvor upozornenia na cenové zmeny a automatické obchody</p>
+      
+      <div class="header-actions">
+        @if (!notificationsEnabled) {
+          <button class="btn-notification" (click)="requestNotificationPermission()">
+            🔕 Povoliť notifikácie
+          </button>
+        }
+        <button class="btn-create" (click)="openCreateModal()">
+          ➕ Nový Alert
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">🟢</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ activeAlertsCount() }}</span>
+          <span class="stat-label">Aktívne alerty</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">●</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ triggeredCount() }}</span>
+          <span class="stat-label">Notifikácie</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">◆</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ alerts().length }}</span>
+          <span class="stat-label">Celkom alertov</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts List -->
+    @if (loading()) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Načítavam...</p>
+      </div>
+    } @else if (alerts().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">◇</span>
+        <h3>Žiadne price alerty</h3>
+        <p>Vytvor svoj prvý price alert a buď informovaný o cenových zmenách</p>
+        <button class="btn-create-large" (click)="openCreateModal()">
+          Vytvoriť Alert
+        </button>
+      </div>
+    } @else {
+      <div class="alerts-list">
+        @for (alert of alerts(); track alert.id) {
+          <div class="alert-card" [class.inactive]="!alert.isActive">
+            <div class="alert-status">
+              <span class="status-icon">{{ alert.isActive ? '🟢' : '⚪' }}</span>
+              <span class="status-text">{{ alert.isActive ? 'Aktívny' : 'Neaktívny' }}</span>
+            </div>
+            
+            <div class="alert-main">
+              <div class="asset-info">
+                <span class="asset-symbol">{{ alert.assetSymbol }}</span>
+                <span class="asset-type-badge" [class.crypto]="alert.assetType === 'crypto'">
+                  {{ alert.assetType === 'crypto' ? 'C' : 'S' }}
+                </span>
+              </div>
+              
+              <div class="alert-condition">
+                <span class="condition-type">
+                  @if (alert.condition === 'above') {
+                    Cena nad
+                  } @else {
+                    📉 Cena pod
+                  }
+                </span>
+                <span class="target-price">${{ formatPrice(alert.targetPrice) }}</span>
+              </div>
+              
+              <div class="alert-action-info">
+                <span class="action-icon">{{ getActionIcon(alert.action) }}</span>
+                <span class="action-text">{{ getActionText(alert.action) }}</span>
+                @if (alert.quantity) {
+                  <span class="quantity">({{ alert.quantity }} ks)</span>
+                }
+              </div>
+            </div>
+            
+            <div class="alert-actions">
+              <button 
+                class="btn-trade" 
+                (click)="goToTrade(alert.assetId)"
+                title="Obchodovať"
+              >
+                💱
+              </button>
+              <button 
+                class="btn-delete" 
+                (click)="deleteAlert(alert.id)"
+                title="Vymazať"
+              >
+                🗑️
+              </button>
+            </div>
+            
+            <div class="alert-meta">
+              <span class="created-at">
+                Vytvorené: {{ alert.createdAt | date:'dd.MM.yyyy HH:mm' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Recent Notifications -->
+    @if (notifications().length > 0) {
+      <div class="notifications-section">
+        <h2>Posledné notifikácie</h2>
+        <div class="notifications-list">
+          @for (notif of notifications().slice(0, 5); track notif.id) {
+            <div class="notification-item" [class.unread]="!notif.isRead">
+              <span class="notif-icon">{{ getActionIcon(notif.alert.action) }}</span>
+              <div class="notif-content">
+                <p class="notif-message">{{ notif.message }}</p>
+                <span class="notif-time">{{ notif.timestamp | date:'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Create Alert Modal -->
+  @if (showCreateModal()) {
+    <div class="modal-overlay" (click)="closeCreateModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Nový Price Alert</h2>
+          <button class="btn-close" (click)="closeCreateModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Asset Search -->
+          <div class="form-group">
+            <label>Vyhľadaj aktívum</label>
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input 
+                type="text"
+                placeholder="Zadaj symbol alebo názov (napr. BTC, Bitcoin, AAPL...)"
+                [value]="searchQuery()"
+                (input)="onSearchChange($event)"
+                class="search-input"
+              >
+            </div>
+            
+            @if (searchQuery() && !selectedAsset()) {
+              <div class="search-results">
+                @if (filteredAssets().length === 0) {
+                  <div class="no-results">Žiadne výsledky pre "{{ searchQuery() }}"</div>
+                } @else {
+                  @for (asset of filteredAssets().slice(0, 8); track asset.id) {
+                    <div class="search-result-item" (click)="selectAsset(asset)">
+                      <span class="result-icon">{{ asset.type === 'crypto' ? 'C' : 'S' }}</span>
+                      <span class="result-symbol">{{ asset.symbol }}</span>
+                      <span class="result-name">{{ asset.name }}</span>
+                      <span class="result-price">${{ formatPrice(asset.price) }}</span>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          @if (selectedAsset()) {
+            <!-- Current Price Display -->
+            <div class="current-price-display">
+              <span class="label">Aktuálna cena:</span>
+              <span class="price">${{ formatPrice(selectedAssetPrice()) }}</span>
+            </div>
+
+            <!-- Alert Condition -->
+            <div class="form-group">
+              <label>Podmienka</label>
+              <div class="alert-type-buttons">
+                <button 
+                  class="type-btn above"
+                  [class.active]="alertCondition() === 'above'"
+                  (click)="onConditionChange('above')"
+                >
+                  Cena stúpne nad
+                </button>
+                <button 
+                  class="type-btn below"
+                  [class.active]="alertCondition() === 'below'"
+                  (click)="onConditionChange('below')"
+                >
+                  📉 Cena klesne pod
+                </button>
+              </div>
+            </div>
+
+            <!-- Target Price -->
+            <div class="form-group">
+              <label>Cieľová cena</label>
+              <div class="price-input">
+                <span class="currency">$</span>
+                <input 
+                  type="number" 
+                  [ngModel]="targetPrice()"
+                  (ngModelChange)="targetPrice.set($event)"
+                  step="0.01"
+                  min="0"
+                >
+              </div>
+              @let diff = ((targetPrice() - selectedAssetPrice()) / selectedAssetPrice()) * 100;
+              <span class="price-diff" [class.positive]="diff > 0" [class.negative]="diff < 0">
+                {{ diff > 0 ? '+' : '' }}{{ diff | number:'1.2-2' }}% od aktuálnej ceny
+              </span>
+            </div>
+
+            <!-- Alert Action -->
+            <div class="form-group">
+              <label>Akcia pri spustení</label>
+              <div class="action-buttons">
+                <button 
+                  class="action-btn notify"
+                  [class.active]="alertAction() === 'notify'"
+                  (click)="alertAction.set('notify')"
+                >
+                  Iba notifikácia
+                </button>
+                <button 
+                  class="action-btn buy"
+                  [class.active]="alertAction() === 'auto-buy'"
+                  (click)="alertAction.set('auto-buy')"
+                >
+                  🟢 Auto-Kúp
+                </button>
+                <button 
+                  class="action-btn sell"
+                  [class.active]="alertAction() === 'auto-sell'"
+                  (click)="alertAction.set('auto-sell')"
+                >
+                  🔴 Auto-Predaj
+                </button>
+              </div>
+            </div>
+
+            @if (alertAction() !== 'notify') {
+              <div class="form-group">
+                <label>Množstvo (ks)</label>
+                <div class="price-input">
+                  <input 
+                    type="number"
+                    [ngModel]="autoTradeQuantity()"
+                    (ngModelChange)="autoTradeQuantity.set($event)"
+                    min="1"
+                    step="1"
+                  >
+                </div>
+                <p class="auto-trade-warning">
+                  ⚠️ Automatický obchod sa vykoná keď cena dosiahne cieľovú hodnotu
+                </p>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeCreateModal()">Zrušiť</button>
+          <button 
+            class="btn-create-alert" 
+            [disabled]="!isFormValid()"
+            (click)="createAlert()"
+          >
+            Vytvoriť Alert
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

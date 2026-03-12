@@ -25,6 +25,15 @@ import { AuthService, ThemeService, CurrencyService, Currency } from '../../core
           <a routerLink="/ai-advisor" routerLinkActive="active" class="nav-link">
             <span></span> AI Poradca
           </a>
+          <a routerLink="/leaderboard" routerLinkActive="active" class="nav-link">
+            <span></span> Leaderboard
+          </a>
+          <a routerLink="/alerts" routerLinkActive="active" class="nav-link">
+            <span></span> Alerty
+          </a>
+          <a routerLink="/news" routerLinkActive="active" class="nav-link">
+            <span></span> Správy
+          </a>
         </nav>
 
         <div class="header-actions">
@@ -53,7 +62,10 @@ import { AuthService, ThemeService, CurrencyService, Currency } from '../../core
             @if (isUserMenuOpen) {
               <div class="user-dropdown">
                 <button (click)="resetBalance()">
-                  <span>🔄</span> Reset zostatku
+                  <span></span> Reset zostatku
+                </button>
+                <button (click)="logout()" class="logout-btn">
+                  <span></span> Odhlásiť sa
                 </button>
               </div>
             }
@@ -289,6 +301,15 @@ import { AuthService, ThemeService, CurrencyService, Currency } from '../../core
         &:hover {
           background: var(--bg-card-hover);
         }
+
+        &.logout-btn {
+          color: #ef4444;
+          border-top: 1px solid var(--border-color);
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.1);
+          }
+        }
       }
     }
 
@@ -395,5 +416,12 @@ export class HeaderComponent {
   resetBalance(): void {
     this.authService.resetBalance();
     this.isUserMenuOpen = false;
+  }
+
+  // odhlasi pouzivatela
+  async logout(): Promise<void> {
+    await this.authService.logout();
+    this.isUserMenuOpen = false;
+    this.router.navigate(['/login']);
   }
 }

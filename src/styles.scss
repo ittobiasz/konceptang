@@ -12,40 +12,40 @@
   --primary-glow: rgba(16, 185, 129, 0.15);
   
   // Dark Theme (default)
-  --bg-body: #050505;
-  --bg-elevated: #0a0a0a;
-  --bg-card: #111111;
-  --bg-card-hover: #1a1a1a;
-  --bg-input: #0d0d0d;
-  --bg-overlay: rgba(0, 0, 0, 0.8);
+  --bg-body: #0a0a0a;
+  --bg-elevated: #121218;
+  --bg-card: #1a1a22;
+  --bg-card-hover: #242432;
+  --bg-input: #141419;
+  --bg-overlay: rgba(0, 0, 0, 0.85);
   
-  --text-primary: #f5f5f5;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0c0;
+  --text-muted: #808090;
   --text-inverse: #000000;
   
-  --border-color: #1f1f1f;
-  --border-hover: #2a2a2a;
+  --border-color: #2d2d3d;
+  --border-hover: #3a3a4a;
   --border-focus: #10b981;
   
-  --positive: #22c55e;
-  --positive-bg: rgba(34, 197, 94, 0.1);
-  --negative: #ef4444;
-  --negative-bg: rgba(239, 68, 68, 0.1);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.1);
-  --info: #3b82f6;
-  --info-bg: rgba(59, 130, 246, 0.1);
+  --positive: #00d98e;
+  --positive-bg: rgba(0, 217, 142, 0.12);
+  --negative: #ff4757;
+  --negative-bg: rgba(255, 71, 87, 0.12);
+  --warning: #ffa500;
+  --warning-bg: rgba(255, 165, 0, 0.12);
+  --info: #0099ff;
+  --info-bg: rgba(0, 153, 255, 0.12);
   
   // Gradient
   --gradient-primary: linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%);
-  --gradient-bg: radial-gradient(ellipse at top, #0a1a15 0%, #050505 50%);
+  --gradient-bg: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
   
   // Effects
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 30px rgba(16, 185, 129, 0.25);
   
   // Spacing
   --spacing-xs: 0.25rem;
@@ -101,6 +101,7 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   transition: background-color var(--transition-slow), color var(--transition-slow);
+  background-size: cover;
 }
 
 // Typography
@@ -144,11 +145,17 @@ textarea {
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   color: var(--text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+  
+  &:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-card);
+  }
   
   &:focus {
-    border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px var(--primary-glow);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow), var(--shadow-sm);
+    background: var(--bg-elevated);
   }
   
   &::placeholder {
@@ -159,6 +166,7 @@ textarea {
 button {
   cursor: pointer;
   transition: all var(--transition-fast);
+  font-weight: 500;
 }
 
 // Cards
@@ -167,10 +175,14 @@ button {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
   
   &:hover {
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
   }
 }
 
@@ -204,15 +216,18 @@ button {
   font-size: 0.9375rem;
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
   
   &-primary {
     background: var(--primary);
     color: var(--text-inverse);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
     
     &:hover {
       background: var(--primary-hover);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
     }
     
     &:active {

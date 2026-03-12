@@ -5,11 +5,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MarketDataService, PortfolioService, AuthService, CurrencyService, UnifiedMarketService } from '../../core';
 import { AssetQuote, Position } from '../../shared/models';
 import { Subject, takeUntil, switchMap, interval, startWith } from 'rxjs';
+import { PriceChartComponent } from '../../shared/components/price-chart.component';
 
 @Component({
   selector: 'app-trade',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PriceChartComponent],
   templateUrl: './trade.component.html',
   styleUrl: './trade.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -44,7 +45,8 @@ export class TradeComponent implements OnInit, OnDestroy {
           this.router.navigate(['/assets']);
           return [];
         }
-        return this.marketDataService.getAllAssets();
+        // Force fresh API call on page load
+        return this.marketDataService.getAllAssetsFresh();
       })
     ).subscribe(assets => {
       const assetId = this.route.snapshot.paramMap.get('id');

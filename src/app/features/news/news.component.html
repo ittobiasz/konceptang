@@ -1,0 +1,138 @@
+<div class="news-page">
+  <div class="container">
+    <!-- Page Header -->
+    <header class="page-header">
+      <h1>Market News</h1>
+      <p>Najnovšie správy z krypto a akciového trhu</p>
+    </header>
+
+    <!-- Market Sentiment Card -->
+    <div class="sentiment-overview">
+      <div class="overall-sentiment" [class]="getOverallSentiment().class">
+        <span class="sentiment-label">Celkový sentiment:</span>
+        <span class="sentiment-value">{{ getOverallSentiment().text }}</span>
+      </div>
+      
+      <div class="sentiment-breakdown">
+        <div class="sentiment-stat positive">
+          <span class="icon">🟢</span>
+          <span class="count">{{ sentimentStats().positive }}</span>
+          <span class="label">Pozitívne</span>
+        </div>
+        <div class="sentiment-stat neutral">
+          <span class="icon">⚪</span>
+          <span class="count">{{ sentimentStats().neutral }}</span>
+          <span class="label">Neutrálne</span>
+        </div>
+        <div class="sentiment-stat negative">
+          <span class="icon">🔴</span>
+          <span class="count">{{ sentimentStats().negative }}</span>
+          <span class="label">Negatívne</span>
+        </div>
+      </div>
+      
+      <button class="btn-refresh" (click)="refreshNews()" [disabled]="loading()">
+        🔄 Obnoviť
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <!-- Category Filter -->
+      <div class="category-tabs">
+        @for (cat of categories; track cat.key) {
+          <button 
+            class="category-tab"
+            [class.active]="selectedCategory() === cat.key"
+            (click)="setCategory(cat.key)"
+          >
+            <span class="tab-icon">{{ cat.icon }}</span>
+            <span class="tab-label">{{ cat.label }}</span>
+            <span class="tab-count">{{ getCategoryCount(cat.key) }}</span>
+          </button>
+        }
+      </div>
+      
+      <!-- Search -->
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text"
+          placeholder="Hľadať správy..."
+          [value]="searchQuery()"
+          (input)="onSearchChange($event)"
+          class="search-input"
+        >
+      </div>
+    </div>
+
+    <!-- News List -->
+    @if (loading() && news().length === 0) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Načítavam správy...</p>
+      </div>
+    } @else if (filteredNews().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">📭</span>
+        <h3>Žiadne správy</h3>
+        <p>Pre vybranú kategóriu neboli nájdené žiadne správy</p>
+      </div>
+    } @else {
+      <div class="news-grid">
+        @for (article of filteredNews(); track article.id) {
+          <article class="news-card" (click)="openArticle(article)">
+            <div class="news-image">
+              @if (article.imageUrl) {
+                <img [src]="article.imageUrl" [alt]="article.title" loading="lazy">
+              } @else {
+                <div class="placeholder-image">
+                  {{ getCategoryIcon(article.category) }}
+                </div>
+              }
+              <span class="sentiment-badge" [class]="article.sentiment || 'neutral'">
+                {{ getSentimentIcon(article.sentiment) }} {{ getSentimentText(article.sentiment) }}
+              </span>
+            </div>
+            
+            <div class="news-content">
+              <div class="news-meta">
+                <span class="news-source">{{ article.source }}</span>
+                <span class="news-date">{{ formatDate(article.publishedAt) }}</span>
+              </div>
+              
+              <h3 class="news-title">{{ article.title }}</h3>
+              
+              <p class="news-excerpt">{{ article.summary }}</p>
+              
+              @if (article.relatedAssets && article.relatedAssets.length > 0) {
+                <div class="related-assets">
+                  @for (asset of article.relatedAssets.slice(0, 3); track asset) {
+                    <button 
+                      class="asset-tag"
+                      (click)="goToTrade(asset); $event.stopPropagation()"
+                    >
+                      {{ asset }}
+                    </button>
+                  }
+                  @if (article.relatedAssets.length > 3) {
+                    <span class="more-assets">
+                      +{{ article.relatedAssets.length - 3 }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+            
+            <div class="news-footer">
+              <span class="category-badge">
+                {{ getCategoryIcon(article.category) }} {{ article.category }}
+              </span>
+              <span class="read-more">Čítať viac →</span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</div>
