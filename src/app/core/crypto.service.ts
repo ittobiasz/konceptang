@@ -201,14 +201,21 @@ export class CryptoService {
     );
   }
 
-  // vrati zalohu ak api nefunguje - generic placeholder prices
+  // vrati zalohu ak api nefunguje - realisticke ceny
   private getFallbackCryptos(): CryptoAsset[] {
     return [
-      { id: 'bitcoin', rank: '1', symbol: 'BTC', name: 'Bitcoin', supply: '19000000', maxSupply: '21000000', marketCapUsd: '1700000000000', volumeUsd24Hr: '30000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
-      { id: 'ethereum', rank: '2', symbol: 'ETH', name: 'Ethereum', supply: '120000000', maxSupply: null, marketCapUsd: '380000000000', volumeUsd24Hr: '15000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
-      { id: 'solana', rank: '3', symbol: 'SOL', name: 'Solana', supply: '400000000', maxSupply: null, marketCapUsd: '100000000000', volumeUsd24Hr: '3000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
-      { id: 'ripple', rank: '4', symbol: 'XRP', name: 'XRP', supply: '45000000000', maxSupply: '100000000000', marketCapUsd: '30000000000', volumeUsd24Hr: '2000000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
-      { id: 'dogecoin', rank: '5', symbol: 'DOGE', name: 'Dogecoin', supply: '140000000000', maxSupply: null, marketCapUsd: '14000000000', volumeUsd24Hr: '800000000', priceUsd: '0', changePercent24Hr: '0', vwap24Hr: '0' },
+      { id: 'bitcoin', rank: '1', symbol: 'BTC', name: 'Bitcoin', supply: '19000000', maxSupply: '21000000', marketCapUsd: '1700000000000', volumeUsd24Hr: '30000000000', priceUsd: '87500', changePercent24Hr: '1.2', vwap24Hr: '87000' },
+      { id: 'ethereum', rank: '2', symbol: 'ETH', name: 'Ethereum', supply: '120000000', maxSupply: null, marketCapUsd: '380000000000', volumeUsd24Hr: '15000000000', priceUsd: '3200', changePercent24Hr: '0.8', vwap24Hr: '3180' },
+      { id: 'tether', rank: '3', symbol: 'USDT', name: 'Tether', supply: '80000000000', maxSupply: null, marketCapUsd: '80000000000', volumeUsd24Hr: '50000000000', priceUsd: '1.00', changePercent24Hr: '0.01', vwap24Hr: '1.00' },
+      { id: 'binancecoin', rank: '4', symbol: 'BNB', name: 'BNB', supply: '150000000', maxSupply: '200000000', marketCapUsd: '90000000000', volumeUsd24Hr: '2000000000', priceUsd: '610', changePercent24Hr: '0.5', vwap24Hr: '608' },
+      { id: 'solana', rank: '5', symbol: 'SOL', name: 'Solana', supply: '400000000', maxSupply: null, marketCapUsd: '100000000000', volumeUsd24Hr: '3000000000', priceUsd: '165', changePercent24Hr: '2.1', vwap24Hr: '162' },
+      { id: 'ripple', rank: '6', symbol: 'XRP', name: 'XRP', supply: '45000000000', maxSupply: '100000000000', marketCapUsd: '30000000000', volumeUsd24Hr: '2000000000', priceUsd: '0.62', changePercent24Hr: '-0.3', vwap24Hr: '0.63' },
+      { id: 'cardano', rank: '7', symbol: 'ADA', name: 'Cardano', supply: '35000000000', maxSupply: '45000000000', marketCapUsd: '17500000000', volumeUsd24Hr: '500000000', priceUsd: '0.50', changePercent24Hr: '1.5', vwap24Hr: '0.49' },
+      { id: 'dogecoin', rank: '8', symbol: 'DOGE', name: 'Dogecoin', supply: '140000000000', maxSupply: null, marketCapUsd: '14000000000', volumeUsd24Hr: '800000000', priceUsd: '0.17', changePercent24Hr: '-1.2', vwap24Hr: '0.17' },
+      { id: 'polkadot', rank: '9', symbol: 'DOT', name: 'Polkadot', supply: '1300000000', maxSupply: null, marketCapUsd: '9100000000', volumeUsd24Hr: '300000000', priceUsd: '7.00', changePercent24Hr: '0.9', vwap24Hr: '6.95' },
+      { id: 'avalanche-2', rank: '10', symbol: 'AVAX', name: 'Avalanche', supply: '370000000', maxSupply: '720000000', marketCapUsd: '13000000000', volumeUsd24Hr: '400000000', priceUsd: '35', changePercent24Hr: '1.8', vwap24Hr: '34.5' },
+      { id: 'chainlink', rank: '11', symbol: 'LINK', name: 'Chainlink', supply: '600000000', maxSupply: '1000000000', marketCapUsd: '9000000000', volumeUsd24Hr: '350000000', priceUsd: '15', changePercent24Hr: '0.6', vwap24Hr: '14.9' },
+      { id: 'uniswap', rank: '12', symbol: 'UNI', name: 'Uniswap', supply: '600000000', maxSupply: '1000000000', marketCapUsd: '6000000000', volumeUsd24Hr: '200000000', priceUsd: '10', changePercent24Hr: '1.1', vwap24Hr: '9.9' },
     ];
   }
 }

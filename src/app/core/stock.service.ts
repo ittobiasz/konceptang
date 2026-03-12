@@ -7,7 +7,10 @@ import { AssetQuote, StockAsset } from '../shared/models';
 const YAHOO_API = 'https://query1.finance.yahoo.com/v8/finance/chart';
 
 const STOCK_SYMBOLS = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
   { symbol: 'MSFT', name: 'Microsoft Corporation' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation' },
   { symbol: 'META', name: 'Meta Platforms Inc.' },
   { symbol: 'TSLA', name: 'Tesla Inc.' },
@@ -189,19 +192,19 @@ export class StockService {
     });
   }
 
-  // placeholder prices - API will override these
+  // realisticke fallback ceny - API ich prepise ak funguje
   private getFallbackPrices(): Record<string, { price: number; change: number }> {
     return {
-      'AAPL': { price: 0, change: 0 },
-      'MSFT': { price: 0, change: 0 },
-      'GOOGL': { price: 0, change: 0 },
-      'AMZN': { price: 0, change: 0 },
-      'NVDA': { price: 0, change: 0 },
-      'META': { price: 0, change: 0 },
-      'TSLA': { price: 0, change: 0 },
-      'JPM': { price: 0, change: 0 },
-      'NFLX': { price: 0, change: 0 },
-      'V': { price: 0, change: 0 },
+      'AAPL': { price: 195, change: 1.2 },
+      'MSFT': { price: 415, change: 0.8 },
+      'GOOGL': { price: 155, change: 0.5 },
+      'AMZN': { price: 185, change: 1.1 },
+      'NVDA': { price: 520, change: 2.3 },
+      'META': { price: 505, change: 0.9 },
+      'TSLA': { price: 275, change: -1.5 },
+      'JPM': { price: 195, change: 0.4 },
+      'NFLX': { price: 620, change: 1.8 },
+      'V': { price: 280, change: 0.3 },
     };
   }
 
